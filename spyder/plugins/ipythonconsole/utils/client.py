@@ -93,6 +93,20 @@ class SpyderKernelClient(QtKernelClient):
         spyder_kernels_info = rep["content"].get("spyder_kernels_info", None)
         self.sig_spyder_kernel_info.emit(spyder_kernels_info)
 
+    def stop_channels(self):
+        """Close channel streams before tearing down their ZMQ sockets."""
+        if self.ioloop_thread and self.ioloop_thread.is_alive():
+            for channel in [
+                self._shell_channel,
+                self._iopub_channel,
+                self._stdin_channel,
+                self._control_channel,
+            ]:
+                if channel is not None:
+                    channel.close()
+
+        super().stop_channels()
+
     def tunnel_to_kernel(
         self, hostname=None, sshkey=None, password=None, ssh_connection=None
     ):
