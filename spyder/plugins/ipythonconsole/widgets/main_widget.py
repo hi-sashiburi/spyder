@@ -2343,10 +2343,11 @@ class IPythonConsoleWidget(PluginMainWidget, CachedKernelMixin):  # noqa: PLR090
         # Fixes spyder-ide/spyder#19084
         open_clients = self.clients.copy()
         for client in self.clients:
-            is_last_client = (
-                len(self.get_related_clients(client, open_clients)) == 0
-            )
-            client.close_client(is_last_client, close_console=True)
+            # Shutdown every handler because all clients are being closed.
+            # Otherwise, handlers for related clients can be destroyed while
+            # their stdout and stderr threads are still running.
+            # Fixes spyder-ide/spyder#25752
+            client.close_client(True, close_console=True)
             open_clients.remove(client)
 
         # Wait for all KernelHandler threads to shutdown.
