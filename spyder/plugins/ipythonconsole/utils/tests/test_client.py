@@ -1,18 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © Spyder Project Contributors
-# Licensed under the terms of the MIT License
-#
-
-"""Tests for the kernel client."""
-
-# Standard library imports
 from unittest.mock import Mock
 
-# Third-party imports
 from jupyter_client.threaded import IOLoopThread, ThreadedKernelClient
 
-# Local imports
 from spyder.plugins.ipythonconsole.utils.client import SpyderKernelClient
 
 
