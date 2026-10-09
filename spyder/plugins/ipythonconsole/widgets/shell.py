@@ -22,6 +22,7 @@ import typing
 from qtpy.QtCore import Qt, Signal, QEvent
 from qtpy.QtGui import QClipboard, QTextCursor, QTextFormat
 from qtpy.QtWidgets import QApplication, QMessageBox
+from qtpy.compat import isalive
 from spyder_kernels.comms.frontendcomm import CommError
 from spyder_kernels.utils.style import create_style_class
 from traitlets import observe
@@ -360,7 +361,7 @@ class ShellWidget(NamepaceBrowserWidget, HelpWidget, DebuggingWidget,
         # pending events are processed while closing a client), in which case
         # we must not set up the kernel or show the banner (the latter makes
         # a blocking kernel call that would never be answered).
-        if self.shutting_down:
+        if self.shutting_down or not isalive(self._control):
             return
 
         if (
