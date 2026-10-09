@@ -19,10 +19,10 @@ from textwrap import dedent
 import typing
 
 # Third party imports
+from qtpy.compat import isalive
 from qtpy.QtCore import Qt, Signal, QEvent
 from qtpy.QtGui import QClipboard, QTextCursor, QTextFormat
 from qtpy.QtWidgets import QApplication, QMessageBox
-from qtpy.compat import isalive
 from spyder_kernels.comms.frontendcomm import CommError
 from spyder_kernels.utils.style import create_style_class
 from traitlets import observe
@@ -369,6 +369,11 @@ class ShellWidget(NamepaceBrowserWidget, HelpWidget, DebuggingWidget,
             KernelConnectionState.SpyderKernelReady
         ):
             self.setup_spyder_kernel()
+
+            # Kernel setup can process pending events, including teardown.
+            if self.shutting_down or not isalive(self._control):
+                return
+
             self._show_banner()
             self.sig_kernel_is_ready.emit()
 
