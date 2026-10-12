@@ -72,7 +72,11 @@ class KernelComm(CommBase, QObject):
 
     def _set_call_return_value(self, call_dict, return_value, is_error=False):
         """Override to use the comm_channel for all replies."""
-        with self.comm_channel_manager(self.calling_comm_id, False):
+        comm_id = self.calling_comm_id
+        if comm_id not in self._comms:
+            return
+
+        with self.comm_channel_manager(comm_id, False):
             if is_error and (get_debug_level() or running_under_pytest()):
                 # Disable error muting when debugging or testing
                 call_dict['settings']['display_error'] = True

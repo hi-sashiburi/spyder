@@ -375,6 +375,11 @@ class ShellWidget(NamepaceBrowserWidget, HelpWidget, DebuggingWidget,
                 return
 
             self._show_banner()
+
+            # Banner creation can also process teardown events.
+            if self.shutting_down or not isalive(self._control):
+                return
+
             self.sig_kernel_is_ready.emit()
 
     def handle_kernel_connection_error(self):

@@ -78,7 +78,12 @@ def test_kernel_ready_stops_when_banner_deletes_shell():
     shell.sig_kernel_is_ready.connect(ready)
 
     def delete_shell():
+        shell._control.deleteLater()
         shell.deleteLater()
+        QCoreApplication.sendPostedEvents(
+            shell._control,
+            QEvent.DeferredDelete,
+        )
         QCoreApplication.sendPostedEvents(shell, QEvent.DeferredDelete)
 
     shell._show_banner = delete_shell
