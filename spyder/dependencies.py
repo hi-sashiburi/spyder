@@ -44,6 +44,7 @@ IPYTHON_PYGMENTS_LEXERS_REQVER = ">=1.0"
 JEDI_REQVER = '>=0.17.2,<0.21.0'
 JELLYFISH_REQVER = '>=0.7'
 JSONSCHEMA_REQVER = '>=3.2.0'
+JUPYTER_CLIENT_REQVER = '>=8.8.0'
 KEYRING_REQVER = '>=17.0.0'
 LSPROTOCOL_REQVER = '>=2025.0.0,<2026.0.0'
 LXML_REQVER = ">=4.9.0"
@@ -152,6 +153,10 @@ DESCRIPTIONS = [
      'package_name': 'jsonschema',
      'features': _('Verify if snippets files are valid'),
      'required_version': JSONSCHEMA_REQVER},
+    {'modname': 'jupyter_client',
+     'package_name': 'jupyter-client',
+     'features': _('Communicate with Jupyter kernels'),
+     'required_version': JUPYTER_CLIENT_REQVER},
     {'modname': "keyring",
      'package_name': "keyring",
      'features': _("Save Github credentials to report internal "
