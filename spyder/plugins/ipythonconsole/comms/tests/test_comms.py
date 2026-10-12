@@ -11,6 +11,7 @@ Tests for the console kernel.
 
 # Standard library imports
 import os
+from unittest.mock import Mock
 
 # Test imports
 import pytest
@@ -175,6 +176,23 @@ def test_request(comms):
     res = frontend_comm.remote_call(blocking=True).test_request('a', b='b')
 
     assert res == 'ab'
+
+
+def test_remote_call_for_removed_comm_is_ignored():
+    """Queued remote calls do not run after their comm is removed."""
+    kernel_comm = KernelComm()
+    handler = Mock()
+    kernel_comm.register_call_handler("late_call", handler)
+    kernel_comm.calling_comm_id = "removed-comm"
+    message = {
+        "content": {
+            "call_name": "late_call",
+        }
+    }
+
+    kernel_comm._handle_remote_call(message, [])
+
+    handler.assert_not_called()
 
 
 if __name__ == "__main__":
