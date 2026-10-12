@@ -58,3 +58,26 @@ def test_waiting_for_shutdown_keeps_handler_until_std_threads_finish(
 
     assert events == ["kill_kernel", "quit", "wait", "close_std_threads"]
     assert KernelHandler._shutdown_thread_list == []
+
+
+def test_finished_shutdown_releases_handler_after_cleanup(monkeypatch):
+    """A completed shutdown does not retain its handler after cleanup."""
+    handler = Mock()
+    shutdown_thread = Mock()
+    shutdown_entry = (shutdown_thread, handler)
+    monkeypatch.setattr(
+        KernelHandler,
+        "_shutdown_thread_list",
+        [shutdown_entry],
+    )
+    handler.sender.return_value = shutdown_thread
+
+    def after_shutdown():
+        assert KernelHandler._shutdown_thread_list == [shutdown_entry]
+
+    handler.after_shutdown.side_effect = after_shutdown
+
+    KernelHandler._shutdown_thread_finished(handler)
+
+    handler.after_shutdown.assert_called_once_with()
+    assert KernelHandler._shutdown_thread_list == []
