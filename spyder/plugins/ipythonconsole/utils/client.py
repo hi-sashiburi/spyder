@@ -143,10 +143,6 @@ class SpyderKernelClient(QtKernelClient):
                         "Error draining kernel channel events: %s", error
                     )
 
-            for channel in channels:
-                if channel is not None:
-                    channel.close()
-
         super().stop_channels()
 
     def _handle_kernel_info_reply(self, rep):
