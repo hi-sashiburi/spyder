@@ -59,3 +59,25 @@ def test_kernel_ready_stops_when_setup_deletes_control():
     shell.setup_spyder_kernel.assert_called_once_with()
     shell._show_banner.assert_not_called()
     shell.sig_kernel_is_ready.emit.assert_not_called()
+
+
+def test_banner_stops_when_generation_deletes_control():
+    """Banner generation cannot leave a deleted console being accessed."""
+    control = ControlWidget()
+
+    def delete_control():
+        control.deleteLater()
+        QCoreApplication.sendPostedEvents(control, QEvent.DeferredDelete)
+        return "banner"
+
+    shell = Mock(
+        is_external_kernel=False,
+        _is_banner_shown=False,
+        additional_options={"show_banner": False},
+        _control=control,
+    )
+    shell.short_banner.side_effect = delete_control
+
+    ShellWidget._show_banner(shell)
+
+    shell._insert_plain_text.assert_not_called()
