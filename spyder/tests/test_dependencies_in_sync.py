@@ -7,10 +7,12 @@
 # Standard library imports
 from ast import literal_eval
 import os.path as osp
+import tomllib
 
 # Third party imports
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
+from packaging.utils import canonicalize_name
 import yaml
 
 # Local imports
@@ -26,6 +28,16 @@ REQ_MAC_FPATH = osp.join(ROOT_PATH, 'requirements', 'macos.yml')
 REQ_LINUX_FPATH = osp.join(ROOT_PATH, 'requirements', 'linux.yml')
 REQ_TEST_FPATH = osp.join(ROOT_PATH, 'requirements', 'tests.yml')
 SETUP_FPATH = osp.join(ROOT_PATH, 'setup.py')
+SPYDER_KERNELS_PATH = osp.join(ROOT_PATH, 'external-deps', 'spyder-kernels')
+SPYDER_KERNELS_PYPROJECT_FPATH = osp.join(
+    SPYDER_KERNELS_PATH, 'pyproject.toml'
+)
+SPYDER_KERNELS_POSIX_REQ_FPATH = osp.join(
+    SPYDER_KERNELS_PATH, 'requirements', 'posix.txt'
+)
+SPYDER_KERNELS_WINDOWS_REQ_FPATH = osp.join(
+    SPYDER_KERNELS_PATH, 'requirements', 'windows.txt'
+)
 
 
 def parse_environment_yaml(fpath):
@@ -48,6 +60,36 @@ def parse_environment_yaml(fpath):
                 deps[req.name] = str(req.specifier)
             else:
                 deps[req.name] = None
+
+    return deps
+
+
+def parse_pyproject_dependencies(fpath):
+    """Parse project dependencies from a pyproject file."""
+    with open(fpath, 'rb') as fh:
+        data = tomllib.load(fh)
+
+    deps = {}
+    for dep in data['project']['dependencies']:
+        req = Requirement(dep)
+        deps[canonicalize_name(req.name)] = str(req.specifier) or None
+
+    return deps
+
+
+def parse_requirements_txt(fpath):
+    """Parse dependencies from a plain requirements file."""
+    with open(fpath, 'r') as fh:
+        lines = fh.readlines()
+
+    deps = {}
+    for line in lines:
+        dep = line.strip()
+        if not dep or dep.startswith('#'):
+            continue
+
+        req = Requirement(dep)
+        deps[canonicalize_name(req.name)] = str(req.specifier) or None
 
     return deps
 
@@ -223,6 +265,7 @@ def test_dependencies_for_spyder_setup_install_requires_in_sync():
 def test_jupyter_client_requires_upstream_channel_cleanup():
     """Jupyter Client should own channel stream cleanup during teardown."""
     required_version = ">=8.8.0"
+    required_kernels_version = "<9,>=8.8.0"
 
     assert (
         parse_environment_yaml(REQ_FPATH)["jupyter-client"] == required_version
@@ -231,6 +274,17 @@ def test_jupyter_client_requires_upstream_channel_cleanup():
     assert parse_setup_install_requires(SETUP_FPATH)["jupyter-client"] == (
         required_version
     )
+    assert parse_pyproject_dependencies(SPYDER_KERNELS_PYPROJECT_FPATH)[
+        "jupyter-client"
+    ] == required_kernels_version
+
+    for req_fpath in (
+        SPYDER_KERNELS_POSIX_REQ_FPATH,
+        SPYDER_KERNELS_WINDOWS_REQ_FPATH,
+    ):
+        assert parse_requirements_txt(req_fpath)["jupyter-client"] == (
+            required_kernels_version
+        )
 
 
 def test_dependencies_for_spyder_setup_extras_requires_in_sync():
