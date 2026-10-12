@@ -38,12 +38,17 @@ def test_client_quiesces_and_drains_before_dependency_teardown(
         client._stdin_channel,
         client._control_channel,
     ) = channels
+
     def dependency_stop_channels(_client):
         for channel in channels:
             channel.close()
         events.append("teardown")
 
-    monkeypatch.setattr(QtKernelClient, "stop_channels", dependency_stop_channels)
+    monkeypatch.setattr(
+        QtKernelClient,
+        "stop_channels",
+        dependency_stop_channels,
+    )
 
     try:
         client.stop_channels()
