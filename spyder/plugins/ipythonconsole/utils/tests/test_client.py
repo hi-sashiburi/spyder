@@ -6,10 +6,10 @@ from qtconsole.client import QtKernelClient
 from spyder.plugins.ipythonconsole.utils.client import SpyderKernelClient
 
 
-def test_client_quiesces_drains_and_closes_streams_before_teardown(
+def test_client_quiesces_and_drains_before_dependency_teardown(
     monkeypatch,
 ):
-    """Channel streams close before the I/O loop tears their sockets down."""
+    """Pending channel events finish before dependency-owned teardown."""
     events = []
     client = SpyderKernelClient()
     client.ioloop_thread = IOLoopThread()
@@ -38,11 +38,12 @@ def test_client_quiesces_drains_and_closes_streams_before_teardown(
         client._stdin_channel,
         client._control_channel,
     ) = channels
-    monkeypatch.setattr(
-        QtKernelClient,
-        "stop_channels",
-        lambda _client: events.append("teardown"),
-    )
+    def dependency_stop_channels(_client):
+        for channel in channels:
+            channel.close()
+        events.append("teardown")
+
+    monkeypatch.setattr(QtKernelClient, "stop_channels", dependency_stop_channels)
 
     try:
         client.stop_channels()
@@ -57,3 +58,4 @@ def test_client_quiesces_drains_and_closes_streams_before_teardown(
             f"close_{channel_name}"
         )
         assert events.index(f"close_{channel_name}") < events.index("teardown")
+        assert events.count(f"close_{channel_name}") == 1
