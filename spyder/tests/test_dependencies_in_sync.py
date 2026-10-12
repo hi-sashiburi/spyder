@@ -220,6 +220,17 @@ def test_dependencies_for_spyder_setup_install_requires_in_sync():
     assert spyder_setup == full_reqs
 
 
+def test_jupyter_client_requires_upstream_channel_cleanup():
+    """Jupyter Client should own channel stream cleanup during teardown."""
+    required_version = ">=8.8.0"
+
+    assert parse_environment_yaml(REQ_FPATH)["jupyter-client"] == required_version
+    assert parse_spyder_dependencies()["jupyter-client"] == required_version
+    assert parse_setup_install_requires(SETUP_FPATH)["jupyter-client"] == (
+        required_version
+    )
+
+
 def test_dependencies_for_spyder_setup_extras_requires_in_sync():
     """
     Spyder setup.py extra_requires should share deps with tests.yml.
