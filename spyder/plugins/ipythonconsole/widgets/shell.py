@@ -1310,6 +1310,9 @@ overrided by the Sympy module (e.g. plot)
         else:
             banner = self.short_banner()
 
+        if not isalive(self._control):
+            return
+
         # Move cursor to first position and insert banner
         cursor = self._control.textCursor()
         cursor.setPosition(0)
