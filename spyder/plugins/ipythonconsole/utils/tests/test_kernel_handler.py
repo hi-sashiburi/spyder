@@ -70,6 +70,10 @@ def test_finished_shutdown_releases_handler_after_cleanup(monkeypatch):
         "_shutdown_thread_list",
         [shutdown_entry],
     )
+    handler._shutdown_thread_list = KernelHandler._shutdown_thread_list
+    handler._shutdown_thread_list_lock = (
+        KernelHandler._shutdown_thread_list_lock
+    )
     handler.sender.return_value = shutdown_thread
 
     def after_shutdown():

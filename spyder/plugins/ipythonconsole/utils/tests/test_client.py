@@ -6,7 +6,7 @@ from qtconsole.client import QtKernelClient
 from spyder.plugins.ipythonconsole.utils.client import SpyderKernelClient
 
 
-def test_client_quiesces_and_drains_before_dependency_teardown(
+def test_client_stops_callbacks_and_drains_before_dependency_teardown(
     monkeypatch,
 ):
     """Pending channel events finish before dependency-owned teardown."""

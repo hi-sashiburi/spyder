@@ -576,15 +576,29 @@ class KernelHandler(QObject):
             else:
                 shutdown_thread = QThread(None)
                 shutdown_thread.run = self._thread_shutdown_kernel
-                shutdown_thread.finished.connect(self.after_shutdown)
-                shutdown_thread.start()
+                shutdown_thread.finished.connect(
+                    self._shutdown_thread_finished
+                )
                 with self._shutdown_thread_list_lock:
                     self._shutdown_thread_list.append((shutdown_thread, self))
+                shutdown_thread.start()
 
     def after_shutdown(self):
         """Cleanup after shutdown"""
         self.close_std_threads()
         self.kernel_comm.remove(only_closing=True)
+
+    def _shutdown_thread_finished(self):
+        """Clean up and release a completed shutdown thread and its owner."""
+        self.after_shutdown()
+        shutdown_thread = self.sender()
+        with self._shutdown_thread_list_lock:
+            for index, (thread, handler) in enumerate(
+                self._shutdown_thread_list
+            ):
+                if thread is shutdown_thread and handler is self:
+                    del self._shutdown_thread_list[index]
+                    break
 
     def _thread_shutdown_kernel(self):
         """Shutdown kernel."""

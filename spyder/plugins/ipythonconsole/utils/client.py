@@ -145,10 +145,13 @@ class SpyderKernelClient(QtKernelClient):
                     future.result()
                 except Exception as error:
                     logger.warning(
-                        "Error quiescing kernel channel stream: %s", error
+                        "Error stopping kernel channel stream callbacks: %s",
+                        error,
                     )
             if pending:
-                logger.warning("Timed out quiescing kernel channel streams")
+                logger.warning(
+                    "Timed out stopping kernel channel stream callbacks"
+                )
 
             if futures:
                 # This callback runs after events already queued on the I/O
