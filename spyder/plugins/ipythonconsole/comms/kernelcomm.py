@@ -134,6 +134,13 @@ class KernelComm(CommBase, QObject):
         self._comm_ready()
 
     # ---- Private -----
+    def _handle_remote_call(self, msg, buffers):
+        """Ignore calls queued after their comm was removed."""
+        if self.calling_comm_id not in self._comms:
+            return
+
+        super()._handle_remote_call(msg, buffers)
+
     def _comm_ready(self):
         """If this function is called, the comm is ready"""
         if self._comms[self.calling_comm_id]['status'] != 'ready':
