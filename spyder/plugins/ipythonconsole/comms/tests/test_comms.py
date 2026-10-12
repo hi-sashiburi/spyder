@@ -195,5 +195,36 @@ def test_remote_call_for_removed_comm_is_ignored():
     handler.assert_not_called()
 
 
+def test_remote_call_finishing_after_comm_removal_does_not_reply():
+    """A call cannot reply through a comm removed while it was running."""
+    kernel_comm = KernelComm()
+    comm_id = "closing-comm"
+    kernel_comm._comms[comm_id] = {
+        "comm": Mock(),
+        "status": "ready",
+    }
+    kernel_comm.calling_comm_id = comm_id
+
+    def remove_comm():
+        del kernel_comm._comms[comm_id]
+
+    kernel_comm.register_call_handler("closing_call", remove_comm)
+    message = {
+        "content": {
+            "call_name": "closing_call",
+            "call_id": "call-id",
+            "call_args": [],
+            "call_kwargs": {},
+            "buffered_args": [],
+            "buffered_kwargs": [],
+            "settings": {"send_reply": True},
+        }
+    }
+
+    kernel_comm._handle_remote_call(message, [])
+
+    assert kernel_comm._comms == {}
+
+
 if __name__ == "__main__":
     pytest.main()

@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 from qtpy.compat import isalive
-from qtpy.QtCore import QCoreApplication, QEvent
+from qtpy.QtCore import QCoreApplication, QEvent, QObject, Signal
 
 from spyder.plugins.ipythonconsole.utils.kernel_handler import (
     KernelConnectionState,
@@ -59,6 +59,33 @@ def test_kernel_ready_stops_when_setup_deletes_control():
     shell.setup_spyder_kernel.assert_called_once_with()
     shell._show_banner.assert_not_called()
     shell.sig_kernel_is_ready.emit.assert_not_called()
+
+
+def test_kernel_ready_stops_when_banner_deletes_shell():
+    """Banner setup cannot leave a deleted shell emitting ready."""
+
+    class FakeShell(QObject):
+        sig_kernel_is_ready = Signal()
+
+    shell = FakeShell()
+    shell.shutting_down = False
+    shell._control = ControlWidget()
+    shell.kernel_handler = Mock(
+        connection_state=KernelConnectionState.SpyderKernelReady,
+    )
+    shell.setup_spyder_kernel = Mock()
+    ready = Mock()
+    shell.sig_kernel_is_ready.connect(ready)
+
+    def delete_shell():
+        shell.deleteLater()
+        QCoreApplication.sendPostedEvents(shell, QEvent.DeferredDelete)
+
+    shell._show_banner = delete_shell
+
+    ShellWidget.handle_kernel_is_ready(shell)
+
+    ready.assert_not_called()
 
 
 def test_banner_stops_when_generation_deletes_control():
