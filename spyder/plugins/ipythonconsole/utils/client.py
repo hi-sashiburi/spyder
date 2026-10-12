@@ -93,7 +93,22 @@ class SpyderKernelClient(QtKernelClient):
     sig_spyder_kernel_info = Signal(object)
 
     def stop_channels(self):
-        """Stop channels after pending stream events have finished."""
+        """Stop channels after pending stream callbacks have finished.
+
+        Channel streams run on the client's I/O loop. Before delegating their
+        closure to jupyter-client, disable new receive callbacks on that loop
+        and enqueue a barrier behind the callbacks that are already pending.
+        This prevents a pending callback from accessing a stream or socket
+        after jupyter-client closes it.
+
+        Each of these pre-teardown waits has a five-second safety limit,
+        matching jupyter-client's channel-close timeout. The first limit
+        covers all channel streams concurrently, rather than five seconds per
+        stream. The barrier has its own limit, so these waits can add up to ten
+        seconds if the I/O loop is unresponsive. On a responsive loop, both
+        finish almost immediately. Dependency-owned teardown has its own
+        separate timeouts.
+        """
         if self.ioloop_thread and self.ioloop_thread.is_alive():
             ioloop = self.ioloop
             futures = []
@@ -122,6 +137,8 @@ class SpyderKernelClient(QtKernelClient):
                 ioloop.add_callback(stop_receiving)
                 futures.append(future)
 
+            # Run all stream callbacks concurrently. The timeout is a single
+            # safety bound for the group, not an additional wait per stream.
             done, pending = wait(futures, timeout=5)
             for future in done:
                 try:
@@ -134,6 +151,8 @@ class SpyderKernelClient(QtKernelClient):
                 logger.warning("Timed out quiescing kernel channel streams")
 
             if futures:
+                # This callback runs after events already queued on the I/O
+                # loop, providing a barrier before dependency-owned teardown.
                 drained = Future()
                 ioloop.add_callback(drained.set_result, None)
                 try:
